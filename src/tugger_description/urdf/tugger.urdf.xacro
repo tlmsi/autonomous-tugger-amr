@@ -488,4 +488,67 @@
 
   </joint>
 
+
+
+  <!-- LIFTING PLATFORM -->
+
+  <link name="lift_platform_link">
+
+    <visual>
+      <geometry>
+        <box size="0.50 0.32 0.015"/>
+      </geometry>
+
+      <material name="gap_dark"/>
+    </visual>
+
+
+    <collision>
+      <geometry>
+        <box size="0.50 0.32 0.015"/>
+      </geometry>
+    </collision>
+
+
+    <inertial>
+      <mass value="3.0"/>
+
+      <inertia
+        ixx="0.02566"
+        ixy="0"
+        ixz="0"
+        iyy="0.06256"
+        iyz="0"
+        izz="0.08810"/>
+    </inertial>
+
+  </link>
+
+
+  <joint name="lift_joint"
+         type="prismatic">
+
+    <parent link="base_link"/>
+    <child link="lift_platform_link"/>
+
+    <!--
+      Lowered position:
+      upper body top = 0.1225 m
+      platform thickness = 0.015 m
+      platform center = 0.1300 m
+    -->
+
+    <origin xyz="0 0 0.130"
+            rpy="0 0 0"/>
+
+    <axis xyz="0 0 1"/>
+
+    <limit
+      lower="0.0"
+      upper="0.040"
+      effort="2000"
+      velocity="0.05"/>
+
+  </joint>
+
 </robot>

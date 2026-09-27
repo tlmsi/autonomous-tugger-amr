@@ -1,10 +1,12 @@
 import os
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
 from launch.substitutions import Command
+
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -35,10 +37,27 @@ def generate_launch_description():
         'tugger_test.sdf'
     )
 
-    robot_description = Command([
-        'xacro ',
-        xacro_file
-    ])
+    robot_description = ParameterValue(
+        Command([
+            'xacro ',
+            xacro_file
+        ]),
+        value_type=str
+    )
+
+    # Gazebo resolves package:// URIs as model:// URIs.
+    # Add the parent of the package share directory so Gazebo can find:
+    # model://tugger_description/meshes/...
+    gazebo_resource_path = os.path.dirname(description_pkg)
+
+    set_gazebo_resource_path = SetEnvironmentVariable(
+        name='GZ_SIM_RESOURCE_PATH',
+        value=[
+            gazebo_resource_path,
+            os.pathsep,
+            os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+        ]
+    )
 
     robot_state_publisher = Node(
         package='robot_state_publisher',
@@ -77,6 +96,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        set_gazebo_resource_path,
         robot_state_publisher,
         gazebo,
         spawn_robot
