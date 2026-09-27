@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'tugger_control'
 
@@ -15,6 +17,14 @@ setup(
             'share/' + package_name,
             ['package.xml']
         ),
+        (
+            os.path.join('share', package_name, 'config'),
+            glob('config/*.yaml')
+        ),
+        (
+            os.path.join('share', package_name, 'launch'),
+            glob('launch/*.launch.py')
+        ),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -26,6 +36,7 @@ setup(
         'console_scripts': [
             'four_ws_controller = tugger_control.four_ws_controller:main',
             'four_ws_odometry = tugger_control.four_ws_odometry:main',
+            'imu_orientation_plotter = tugger_control.imu_orientation_plotter:main',
         ],
     },
 )

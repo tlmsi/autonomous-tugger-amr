@@ -97,6 +97,7 @@ def generate_launch_description():
     clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='clock_bridge',
         arguments=[
             '/world/tugger_test/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
         ],
@@ -109,11 +110,24 @@ def generate_launch_description():
     imu_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='imu_bridge',
         arguments=[
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
         remappings=[
             ('/imu', '/imu/data')
+        ],
+        output='screen'
+    )
+
+    # Bridge both Gazebo LiDARs to ROS 2.
+    lidar_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='lidar_bridge',
+        arguments=[
+            '/front_left/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            '/rear_right/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan'
         ],
         output='screen'
     )
@@ -167,6 +181,7 @@ def generate_launch_description():
         gazebo,
         clock_bridge,
         imu_bridge,
+        lidar_bridge,
         spawn_robot,
         joint_state_broadcaster_spawner,
         steering_controller_spawner,

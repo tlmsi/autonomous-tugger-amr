@@ -31,3 +31,13 @@ frames_*.pdf
 *.bak
 *.tmp
 *~
+
+# ROS bags / recorded test data
+rosbag2_*/
+*.mcap
+*.db3
+
+# Generated plots / analysis data
+imu_plots/
+plots/
+*.csv

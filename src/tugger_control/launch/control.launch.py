@@ -1,0 +1,59 @@
+from launch import LaunchDescription
+
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+
+import os
+
+
+def generate_launch_description():
+
+    tugger_control_share = get_package_share_directory(
+        'tugger_control'
+    )
+
+    ekf_config = os.path.join(
+        tugger_control_share,
+        'config',
+        'ekf.yaml'
+    )
+
+    four_ws_controller = Node(
+        package='tugger_control',
+        executable='four_ws_controller',
+        name='four_ws_controller',
+        output='screen',
+        parameters=[
+            {'use_sim_time': True}
+        ]
+    )
+
+    four_ws_odometry = Node(
+        package='tugger_control',
+        executable='four_ws_odometry',
+        name='four_ws_odometry',
+        output='screen',
+        parameters=[
+            {'use_sim_time': True}
+        ]
+    )
+
+    ekf = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        parameters=[
+            ekf_config,
+            {'use_sim_time': True}
+        ],
+        remappings=[
+            ('odometry/filtered', '/odometry/filtered')
+        ]
+    )
+
+    return LaunchDescription([
+        four_ws_controller,
+        four_ws_odometry,
+        ekf,
+    ])

@@ -14,7 +14,7 @@ class FourWSController(Node):
     def __init__(self):
         super().__init__('four_ws_controller')
 
-        # Tugger geometry
+        # Vehicle geometry
         self.declare_parameter('wheelbase', 0.58)
         self.declare_parameter('track_width', 0.44)
         self.declare_parameter('wheel_radius', 0.055)
@@ -53,82 +53,169 @@ class FourWSController(Node):
         )
 
         self.get_logger().info(
-            '4WS controller started '
+            '4WS ICR controller started '
             f'(L={self.wheelbase:.3f} m, '
             f'W={self.track_width:.3f} m, '
-            f'R={self.wheel_radius:.3f} m)'
+            f'Rwheel={self.wheel_radius:.3f} m)'
         )
+
+    def clamp_steering(self, angle):
+        return max(
+            -self.max_steering_angle,
+            min(self.max_steering_angle, angle)
+        )
+
+    def stop(self):
+        steering_msg = Float64MultiArray()
+        steering_msg.data = [0.0, 0.0, 0.0, 0.0]
+
+        traction_msg = Float64MultiArray()
+        traction_msg.data = [0.0, 0.0]
+
+        self.steering_pub.publish(steering_msg)
+        self.traction_pub.publish(traction_msg)
 
     def cmd_vel_callback(self, msg):
 
         v = float(msg.linear.x)
-        yaw_rate = float(msg.angular.z)
+        omega = float(msg.angular.z)
 
         # ----------------------------------------------------------
-        # STOP / NO LONGITUDINAL MOTION
-        #
-        # This vehicle is not differential drive and cannot perform
-        # a zero-radius rotation.
+        # STOP
+        # Vehicle cannot perform zero-radius differential rotation.
         # ----------------------------------------------------------
 
         if abs(v) < 1e-4:
-            self.publish_commands(
-                front_angle=0.0,
-                rear_angle=0.0,
-                rear_left_speed=0.0,
-                rear_right_speed=0.0
-            )
+            self.stop()
             return
 
         # ----------------------------------------------------------
-        # SYMMETRIC COUNTER-PHASE 4WS
-        #
-        # Front axle:
-        #   FL = FR = +delta
-        #
-        # Rear axle:
-        #   RL = RR = -delta
-        #
-        # For symmetric 4WS:
-        #
-        #   yaw_rate = (2*v/L) * tan(delta)
-        #
-        # therefore:
-        #
-        #   delta = atan(yaw_rate * L / (2*v))
+        # STRAIGHT MOTION
         # ----------------------------------------------------------
 
-        delta = math.atan(
-            (yaw_rate * self.wheelbase) / (2.0 * v)
-        )
+        if abs(omega) < 1e-4:
 
-        delta = max(
-            -self.max_steering_angle,
-            min(self.max_steering_angle, delta)
-        )
+            wheel_speed = v / self.wheel_radius
 
-        front_angle = delta
-        rear_angle = -delta
+            steering_msg = Float64MultiArray()
+            steering_msg.data = [
+                0.0,  # FL
+                0.0,  # FR
+                0.0,  # RL
+                0.0   # RR
+            ]
+
+            traction_msg = Float64MultiArray()
+            traction_msg.data = [
+                wheel_speed,  # RL
+                wheel_speed   # RR
+            ]
+
+            self.steering_pub.publish(steering_msg)
+            self.traction_pub.publish(traction_msg)
+            return
 
         # ----------------------------------------------------------
-        # REAR TRACTION DIFFERENTIAL
+        # ICR-BASED SYMMETRIC COUNTER-PHASE 4WS
         #
-        # During a turn the left and right wheels follow different
-        # radii. Therefore their longitudinal speeds cannot remain
-        # equal.
+        # Coordinate system:
         #
-        #   v_left  = v - yaw_rate * W/2
-        #   v_right = v + yaw_rate * W/2
+        #             +x
+        #              ^
         #
-        # Convert linear wheel speeds [m/s] to angular speeds [rad/s].
+        #       FL           FR
+        #
+        #              O  ------> +y left/right according to ROS
+        #
+        #       RL           RR
+        #
+        # For symmetric counter-phase 4WS, the vehicle centre has
+        # zero lateral velocity.
+        #
+        # Desired body twist:
+        #
+        #   vx = v
+        #   vy = 0
+        #   wz = omega
+        #
+        # Therefore the ICR is:
+        #
+        #   R = v / omega
+        #
+        # measured laterally from the vehicle centre.
+        #
+        # Every wheel is then aligned with its own instantaneous
+        # velocity vector:
+        #
+        #   vx_i = v - omega * y_i
+        #   vy_i = omega * x_i
+        #
+        # steering_i = atan2(vy_i, vx_i)
+        #
+        # This gives different inner/outer steering angles while
+        # keeping all four wheels consistent with the SAME rigid-body
+        # motion / ICR.
         # ----------------------------------------------------------
 
-        rear_left_linear = (
-            v - yaw_rate * self.track_width / 2.0
+        half_L = self.wheelbase / 2.0
+        half_W = self.track_width / 2.0
+
+        # Wheel positions relative to base centre.
+        #
+        # ROS convention:
+        #   +x forward
+        #   +y left
+        #
+        # FL: (+L/2, +W/2)
+        # FR: (+L/2, -W/2)
+        # RL: (-L/2, +W/2)
+        # RR: (-L/2, -W/2)
+
+        fl_vx = v - omega * half_W
+        fl_vy = omega * half_L
+
+        fr_vx = v + omega * half_W
+        fr_vy = omega * half_L
+
+        rl_vx = v - omega * half_W
+        rl_vy = -omega * half_L
+
+        rr_vx = v + omega * half_W
+        rr_vy = -omega * half_L
+
+        # Individual wheel steering directions.
+        fl_angle = math.atan2(fl_vy, fl_vx)
+        fr_angle = math.atan2(fr_vy, fr_vx)
+        rl_angle = math.atan2(rl_vy, rl_vx)
+        rr_angle = math.atan2(rr_vy, rr_vx)
+
+        fl_angle = self.clamp_steering(fl_angle)
+        fr_angle = self.clamp_steering(fr_angle)
+        rl_angle = self.clamp_steering(rl_angle)
+        rr_angle = self.clamp_steering(rr_angle)
+
+        # ----------------------------------------------------------
+        # REAR WHEEL SPEEDS
+        #
+        # Rear wheels are the driven wheels.
+        #
+        # Their required rolling speeds are the magnitudes of their
+        # local rigid-body velocity vectors.
+        #
+        # Preserve the sign of commanded longitudinal motion so
+        # reverse driving also works.
+        # ----------------------------------------------------------
+
+        direction = 1.0 if v >= 0.0 else -1.0
+
+        rear_left_linear = direction * math.hypot(
+            rl_vx,
+            rl_vy
         )
 
-        rear_right_linear = (
-            v + yaw_rate * self.track_width / 2.0
+        rear_right_linear = direction * math.hypot(
+            rr_vx,
+            rr_vy
         )
 
         rear_left_speed = (
@@ -139,35 +226,19 @@ class FourWSController(Node):
             rear_right_linear / self.wheel_radius
         )
 
-        self.publish_commands(
-            front_angle,
-            rear_angle,
-            rear_left_speed,
-            rear_right_speed
-        )
-
-    def publish_commands(
-        self,
-        front_angle,
-        rear_angle,
-        rear_left_speed,
-        rear_right_speed
-    ):
+        # ----------------------------------------------------------
+        # PUBLISH
+        # ----------------------------------------------------------
 
         steering_msg = Float64MultiArray()
-
-        # Physical steering architecture:
-        # one steering position per axle.
         steering_msg.data = [
-            front_angle,   # FL
-            front_angle,   # FR
-            rear_angle,    # RL
-            rear_angle     # RR
+            fl_angle,
+            fr_angle,
+            rl_angle,
+            rr_angle
         ]
 
         traction_msg = Float64MultiArray()
-
-        # Independent rear traction motors.
         traction_msg.data = [
             rear_left_speed,
             rear_right_speed
@@ -178,14 +249,17 @@ class FourWSController(Node):
 
 
 def main(args=None):
+
     rclpy.init(args=args)
 
     node = FourWSController()
 
     try:
         rclpy.spin(node)
+
     except KeyboardInterrupt:
         pass
+
     finally:
         node.destroy_node()
         rclpy.shutdown()
