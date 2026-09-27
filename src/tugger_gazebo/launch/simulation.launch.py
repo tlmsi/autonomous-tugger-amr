@@ -132,6 +132,20 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Bridge front and rear RGB cameras to ROS 2.
+    camera_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='camera_bridge',
+        arguments=[
+            '/front_camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/front_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            '/rear_camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/rear_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo'
+        ],
+        output='screen'
+    )
+
     # Automatically load and activate ROS 2 controllers.
     joint_state_broadcaster_spawner = Node(
         package='controller_manager',
@@ -182,6 +196,7 @@ def generate_launch_description():
         clock_bridge,
         imu_bridge,
         lidar_bridge,
+        camera_bridge,
         spawn_robot,
         joint_state_broadcaster_spawner,
         steering_controller_spawner,
