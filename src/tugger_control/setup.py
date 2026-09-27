@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'four_ws_controller = tugger_control.four_ws_controller:main',
+            'four_ws_odometry = tugger_control.four_ws_odometry:main',
         ],
     },
 )

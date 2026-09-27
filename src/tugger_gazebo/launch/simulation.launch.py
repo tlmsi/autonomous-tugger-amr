@@ -106,6 +106,18 @@ def generate_launch_description():
         output='screen'
     )
 
+    imu_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'
+        ],
+        remappings=[
+            ('/imu', '/imu/data')
+        ],
+        output='screen'
+    )
+
     # Automatically load and activate ROS 2 controllers.
     joint_state_broadcaster_spawner = Node(
         package='controller_manager',
@@ -154,6 +166,7 @@ def generate_launch_description():
         robot_state_publisher,
         gazebo,
         clock_bridge,
+        imu_bridge,
         spawn_robot,
         joint_state_broadcaster_spawner,
         steering_controller_spawner,
