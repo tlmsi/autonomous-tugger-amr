@@ -21,3 +21,13 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+
+# Generated ROS debugging files
+frames_*.gv
+frames_*.pdf
+
+# Backups / temporary files
+*.backup
+*.bak
+*.tmp
+*~
