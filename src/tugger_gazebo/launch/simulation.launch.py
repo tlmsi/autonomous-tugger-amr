@@ -45,9 +45,7 @@ def generate_launch_description():
         value_type=str
     )
 
-    # Gazebo resolves package:// URIs as model:// URIs.
-    # Add the parent of the package share directory so Gazebo can find:
-    # model://tugger_description/meshes/...
+    # Allow Gazebo to resolve package://tugger_description/... mesh URIs.
     gazebo_resource_path = os.path.dirname(description_pkg)
 
     set_gazebo_resource_path = SetEnvironmentVariable(
@@ -95,9 +93,23 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Bridge Gazebo simulation time to ROS 2 /clock.
+    clock_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/world/tugger_test/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
+        ],
+        remappings=[
+            ('/world/tugger_test/clock', '/clock')
+        ],
+        output='screen'
+    )
+
     return LaunchDescription([
         set_gazebo_resource_path,
         robot_state_publisher,
         gazebo,
+        clock_bridge,
         spawn_robot
     ])
