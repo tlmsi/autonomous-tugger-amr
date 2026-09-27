@@ -772,6 +772,27 @@
     </joint>
 
 
+    <!-- Passive front-wheel state interfaces -->
+
+    <joint name="front_left_wheel_joint">
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="front_right_wheel_joint">
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+
+    <!-- Lift state interface -->
+
+    <joint name="lift_joint">
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+
     <!-- Rear-wheel-drive traction interfaces -->
 
     <joint name="rear_left_wheel_joint">
