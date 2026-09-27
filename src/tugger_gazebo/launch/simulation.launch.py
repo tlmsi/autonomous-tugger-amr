@@ -106,10 +106,56 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Automatically load and activate ROS 2 controllers.
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'joint_state_broadcaster',
+            '--controller-manager', '/controller_manager'
+        ],
+        output='screen'
+    )
+
+    steering_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'steering_controller',
+            '--controller-manager', '/controller_manager',
+            '--param-file',
+            os.path.join(
+                gazebo_pkg,
+                'config',
+                'controllers.yaml'
+            )
+        ],
+        output='screen'
+    )
+
+    traction_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'traction_controller',
+            '--controller-manager', '/controller_manager',
+            '--param-file',
+            os.path.join(
+                gazebo_pkg,
+                'config',
+                'controllers.yaml'
+            )
+        ],
+        output='screen'
+    )
+
     return LaunchDescription([
         set_gazebo_resource_path,
         robot_state_publisher,
         gazebo,
         clock_bridge,
-        spawn_robot
+        spawn_robot,
+        joint_state_broadcaster_spawner,
+        steering_controller_spawner,
+        traction_controller_spawner
     ])
