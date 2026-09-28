@@ -1,0 +1,10 @@
+<library path="tugger_bidirectional_planner">
+  <class
+    type="tugger_navigation::BidirectionalPlanner"
+    base_class_type="nav2_core::GlobalPlanner">
+    <description>
+      Computes independent forward-only and reverse-only kinematic paths
+      and selects the shorter valid path.
+    </description>
+  </class>
+</library>

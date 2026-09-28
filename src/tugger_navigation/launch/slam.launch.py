@@ -34,6 +34,13 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        Node(
+            package='tugger_navigation',
+            executable='slam_scan_filter.py',
+            name='slam_scan_filter',
+            output='screen'
+        ),
+
         slam_toolbox,
         lifecycle_manager
     ])
