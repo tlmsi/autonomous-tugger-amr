@@ -5,7 +5,7 @@ import math
 import rclpy
 from rclpy.node import Node
 
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import Float64MultiArray
 
 
@@ -46,10 +46,21 @@ class FourWSController(Node):
         )
 
         self.cmd_vel_sub = self.create_subscription(
-            Twist,
+            TwistStamped,
             '/cmd_vel',
             self.cmd_vel_callback,
             10
+        )
+
+        # Safety watchdog.
+        # If cmd_vel disappears, stop the vehicle automatically.
+        self.cmd_vel_timeout = 0.5
+        self.last_cmd_vel_time = None
+        self.watchdog_triggered = False
+
+        self.watchdog_timer = self.create_timer(
+            0.1,
+            self.watchdog_callback
         )
 
         self.get_logger().info(
@@ -75,10 +86,29 @@ class FourWSController(Node):
         self.steering_pub.publish(steering_msg)
         self.traction_pub.publish(traction_msg)
 
+    def watchdog_callback(self):
+        if self.last_cmd_vel_time is None:
+            return
+
+        elapsed = (
+            self.get_clock().now() - self.last_cmd_vel_time
+        ).nanoseconds / 1e9
+
+        if elapsed >= self.cmd_vel_timeout and not self.watchdog_triggered:
+            self.stop()
+            self.watchdog_triggered = True
+
+            self.get_logger().warn(
+                f'cmd_vel timeout ({elapsed:.2f} s) - vehicle stopped'
+            )
+
     def cmd_vel_callback(self, msg):
 
-        v = float(msg.linear.x)
-        omega = float(msg.angular.z)
+        self.last_cmd_vel_time = self.get_clock().now()
+        self.watchdog_triggered = False
+
+        v = float(msg.twist.linear.x)
+        omega = float(msg.twist.angular.z)
 
         # ----------------------------------------------------------
         # STOP
@@ -184,10 +214,23 @@ class FourWSController(Node):
         rr_vy = -omega * half_L
 
         # Individual wheel steering directions.
-        fl_angle = math.atan2(fl_vy, fl_vx)
-        fr_angle = math.atan2(fr_vy, fr_vx)
-        rl_angle = math.atan2(rl_vy, rl_vx)
-        rr_angle = math.atan2(rr_vy, rr_vx)
+        #
+        # A wheel rolling line is equivalent modulo pi. For reverse motion,
+        # atan2(vy, vx) may return an angle near +/-pi even though the
+        # mechanically equivalent steering angle is near zero. Normalize
+        # every steering command into [-pi/2, +pi/2] before applying the
+        # physical steering limit.
+        def normalize_steering(angle):
+            while angle > math.pi / 2.0:
+                angle -= math.pi
+            while angle < -math.pi / 2.0:
+                angle += math.pi
+            return angle
+
+        fl_angle = normalize_steering(math.atan2(fl_vy, fl_vx))
+        fr_angle = normalize_steering(math.atan2(fr_vy, fr_vx))
+        rl_angle = normalize_steering(math.atan2(rl_vy, rl_vx))
+        rr_angle = normalize_steering(math.atan2(rr_vy, rr_vx))
 
         fl_angle = self.clamp_steering(fl_angle)
         fr_angle = self.clamp_steering(fr_angle)
