@@ -98,7 +98,7 @@ class FourWSController(Node):
             self.stop()
             self.watchdog_triggered = True
 
-            self.get_logger().warn(
+            self.get_logger().warning(
                 f'cmd_vel timeout ({elapsed:.2f} s) - vehicle stopped'
             )
 

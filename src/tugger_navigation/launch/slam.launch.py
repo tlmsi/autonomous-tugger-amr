@@ -38,7 +38,8 @@ def generate_launch_description():
             package='tugger_navigation',
             executable='slam_scan_filter.py',
             name='slam_scan_filter',
-            output='screen'
+            output='screen',
+            parameters=[{'use_sim_time': True}]
         ),
 
         slam_toolbox,
