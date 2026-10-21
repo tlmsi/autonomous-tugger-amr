@@ -41,3 +41,7 @@ rosbag2_*/
 imu_plots/
 plots/
 *.csv
+
+# Local development backups
+*.before_tf_fix
+*.before_cmd_vel
