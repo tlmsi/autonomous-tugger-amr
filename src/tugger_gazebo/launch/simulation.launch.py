@@ -34,7 +34,7 @@ def generate_launch_description():
     world_file = os.path.join(
         gazebo_pkg,
         'worlds',
-        'tugger_test.sdf'
+        'tugger_warehouse.sdf'
     )
 
     robot_description = ParameterValue(
@@ -189,6 +189,23 @@ def generate_launch_description():
         output='screen'
     )
 
+
+    lift_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'lift_controller',
+            '--controller-manager', '/controller_manager',
+            '--param-file',
+            os.path.join(
+                gazebo_pkg,
+                'config',
+                'controllers.yaml'
+            )
+        ],
+        output='screen'
+    )
+
     return LaunchDescription([
         set_gazebo_resource_path,
         robot_state_publisher,
@@ -200,5 +217,6 @@ def generate_launch_description():
         spawn_robot,
         joint_state_broadcaster_spawner,
         steering_controller_spawner,
-        traction_controller_spawner
+        traction_controller_spawner,
+        lift_controller_spawner
     ])
