@@ -39,6 +39,14 @@ def generate_launch_description():
         ),
 
         Node(
+            package='nav2_smoother',
+            executable='smoother_server',
+            name='smoother_server',
+            output='screen',
+            parameters=[config_file]
+        ),
+
+        Node(
             package='nav2_behaviors',
             executable='behavior_server',
             name='behavior_server',

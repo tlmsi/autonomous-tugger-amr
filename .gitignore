@@ -45,3 +45,8 @@ plots/
 # Local development backups
 *.before_tf_fix
 *.before_cmd_vel
+
+# Development snapshots and backup copies
+*.before_*
+*.backup_*
+*.bak2
