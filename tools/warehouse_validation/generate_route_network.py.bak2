@@ -1,0 +1,472 @@
+#!/usr/bin/env python3
+
+import json
+import math
+import sys
+from pathlib import Path
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.ndimage import binary_dilation
+
+import xml.etree.ElementTree as ET
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from validate_warehouse import (
+    collect_collision_boxes,
+    WORLD_X_MIN,
+    WORLD_X_MAX,
+    WORLD_Y_MIN,
+    WORLD_Y_MAX,
+)
+
+ROOT = Path(__file__).resolve().parents[2]
+WORLD_FILE = (
+    ROOT / "src/tugger_gazebo/worlds/tugger_warehouse.sdf"
+)
+RESULTS = Path(__file__).resolve().parent / "results"
+
+RESOLUTION = 0.05
+
+ROBOT_LENGTH = 1.00
+ROBOT_WIDTH = 0.66
+SAFETY_MARGIN = 0.30
+
+CLEARANCE_RADIUS = (
+    math.hypot(ROBOT_LENGTH / 2, ROBOT_WIDTH / 2)
+    + SAFETY_MARGIN
+)
+
+WHEELBASE = 0.58
+MAX_STEERING = math.radians(45)
+
+# Opposite-phase 4WS:
+# yaw_rate / speed = 2*tan(delta)/wheelbase
+MIN_TURN_RADIUS = WHEELBASE / (
+    2 * math.tan(MAX_STEERING)
+)
+
+# Use a larger, smoother radius than the physical minimum.
+TURN_RADIUS = 1.20
+
+LONGITUDINAL_Y = [-7.0, 0.0, 7.0]
+TRANSVERSE_X = [-6.5, 4.5]
+
+X_ENDPOINTS = [-18.0, 18.0]
+Y_ENDPOINTS = [-10.5, 10.5]
+
+STEP = 0.05
+
+
+def pose(x, y, yaw):
+    return [
+        round(float(x), 4),
+        round(float(y), 4),
+        round(float(yaw), 5),
+    ]
+
+
+def sample_line(start, end, spacing=STEP):
+    x0, y0 = start
+    x1, y1 = end
+
+    distance = math.hypot(x1 - x0, y1 - y0)
+    count = max(2, int(math.ceil(distance / spacing)) + 1)
+
+    yaw = math.atan2(y1 - y0, x1 - x0)
+
+    return [
+        pose(
+            x0 + (x1 - x0) * t,
+            y0 + (y1 - y0) * t,
+            yaw,
+        )
+        for t in np.linspace(0, 1, count)
+    ]
+
+
+def sample_arc(cx, cy, radius, start_angle, end_angle):
+    """Sample a directed circular arc with continuous tangent headings."""
+    delta = end_angle - start_angle
+    arc_length = abs(delta) * radius
+    count = max(2, int(math.ceil(arc_length / STEP)) + 1)
+
+    direction = 1 if delta > 0 else -1
+
+    points = []
+
+    for angle in np.linspace(start_angle, end_angle, count):
+        x = cx + radius * math.cos(angle)
+        y = cy + radius * math.sin(angle)
+
+        yaw = angle + direction * math.pi / 2
+        yaw = math.atan2(math.sin(yaw), math.cos(yaw))
+
+        points.append(pose(x, y, yaw))
+
+    return points
+
+
+def generate_turn(x, y, sx, sy, radius):
+    """
+    Generate a quarter-circle from a horizontal approach
+    toward a vertical departure.
+
+    sx:
+      -1: approach from the left
+      +1: approach from the right
+
+    sy:
+      -1: depart downward
+      +1: depart upward
+    """
+
+    entry = (x + sx * radius, y)
+    exit_point = (x, y + sy * radius)
+
+    center = (
+        x + sx * radius,
+        y + sy * radius,
+    )
+
+    start_angle = -sy * math.pi / 2
+
+    # Choose the signed 90-degree sweep explicitly.
+    delta = sx * sy * math.pi / 2
+
+    end_angle = start_angle + delta
+
+    arc = sample_arc(
+        center[0],
+        center[1],
+        radius,
+        start_angle,
+        end_angle,
+    )
+
+    return entry, exit_point, arc
+
+def rasterize_boxes(boxes):
+    xs = np.arange(
+        WORLD_X_MIN + RESOLUTION / 2,
+        WORLD_X_MAX,
+        RESOLUTION,
+    )
+
+    ys = np.arange(
+        WORLD_Y_MIN + RESOLUTION / 2,
+        WORLD_Y_MAX,
+        RESOLUTION,
+    )
+
+    occupied = np.zeros((len(ys), len(xs)), dtype=bool)
+
+    for item in boxes:
+        corners = item["corners"]
+
+        xmin = float(corners[:, 0].min())
+        xmax = float(corners[:, 0].max())
+        ymin = float(corners[:, 1].min())
+        ymax = float(corners[:, 1].max())
+
+        ix0 = max(0, int(math.floor(
+            (xmin - WORLD_X_MIN) / RESOLUTION
+        )))
+        ix1 = min(len(xs), int(math.ceil(
+            (xmax - WORLD_X_MIN) / RESOLUTION
+        )))
+
+        iy0 = max(0, int(math.floor(
+            (ymin - WORLD_Y_MIN) / RESOLUTION
+        )))
+        iy1 = min(len(ys), int(math.ceil(
+            (ymax - WORLD_Y_MIN) / RESOLUTION
+        )))
+
+        occupied[iy0:iy1, ix0:ix1] = True
+
+    cells = int(math.ceil(CLEARANCE_RADIUS / RESOLUTION))
+
+    yy, xx = np.ogrid[-cells:cells + 1, -cells:cells + 1]
+
+    kernel = (
+        xx * xx + yy * yy
+        <= (CLEARANCE_RADIUS / RESOLUTION) ** 2
+    )
+
+    protected = binary_dilation(
+        occupied,
+        structure=kernel,
+    )
+
+    return occupied, protected
+
+
+def is_safe(path, protected):
+    height, width = protected.shape
+
+    for x, y, yaw in path:
+        ix = int((x - WORLD_X_MIN) / RESOLUTION)
+        iy = int((y - WORLD_Y_MIN) / RESOLUTION)
+
+        if ix < 0 or ix >= width:
+            return False
+
+        if iy < 0 or iy >= height:
+            return False
+
+        if protected[iy, ix]:
+            return False
+
+    return True
+
+
+def build_network(protected):
+    nodes = {}
+    edges = {}
+    turns = {}
+
+    x_positions = [
+        X_ENDPOINTS[0],
+        *TRANSVERSE_X,
+        X_ENDPOINTS[1],
+    ]
+
+    y_positions = [
+        Y_ENDPOINTS[0],
+        *LONGITUDINAL_Y,
+        Y_ENDPOINTS[1],
+    ]
+
+    def add_node(name, x, y):
+        nodes[name] = {
+            "x": x,
+            "y": y,
+        }
+
+    def add_edge(name, start, end):
+        a = nodes[start]
+        b = nodes[end]
+
+        path = sample_line(
+            (a["x"], a["y"]),
+            (b["x"], b["y"]),
+        )
+
+        edges[name] = {
+            "start": start,
+            "end": end,
+            "length": round(
+                math.hypot(
+                    b["x"] - a["x"],
+                    b["y"] - a["y"],
+                ),
+                3,
+            ),
+            "valid": is_safe(path, protected),
+            "poses": path,
+        }
+
+    for yi, y in enumerate(LONGITUDINAL_Y):
+        for xi, x in enumerate(x_positions):
+            add_node(f"H{yi}_{xi}", x, y)
+
+    for xi, x in enumerate(TRANSVERSE_X):
+        for yi, y in enumerate(y_positions):
+            if y in LONGITUDINAL_Y:
+                continue
+            add_node(f"V{xi}_{yi}", x, y)
+
+    # Horizontal segments
+    for yi in range(len(LONGITUDINAL_Y)):
+        for xi in range(len(x_positions) - 1):
+            add_edge(
+                f"horizontal_{yi}_{xi}",
+                f"H{yi}_{xi}",
+                f"H{yi}_{xi + 1}",
+            )
+
+    # Vertical segments
+    for xi, x in enumerate(TRANSVERSE_X):
+        vertical_names = [
+            f"V{xi}_0",
+            f"H0_{xi + 1}",
+            f"H1_{xi + 1}",
+            f"H2_{xi + 1}",
+            f"V{xi}_4",
+        ]
+
+        for j in range(len(vertical_names) - 1):
+            add_edge(
+                f"vertical_{xi}_{j}",
+                vertical_names[j],
+                vertical_names[j + 1],
+            )
+
+    # Smooth quarter-circle turns at the six intersections.
+    for xi, x in enumerate(TRANSVERSE_X):
+        for yi, y in enumerate(LONGITUDINAL_Y):
+            for sx in (-1, 1):
+                for sy in (-1, 1):
+
+                    entry, exit_point, arc = generate_turn(
+                        x, y, sx, sy, TURN_RADIUS
+                    )
+
+                    name = f"turn_x{xi}_y{yi}_sx{sx}_sy{sy}"
+
+                    valid = is_safe(arc, protected)
+
+                    turns[name] = {
+                        "intersection": f"H{yi}_{xi + 1}",
+                        "entry": list(entry),
+                        "exit": list(exit_point),
+                        "radius": TURN_RADIUS,
+                        "valid": valid,
+                        "poses": arc,
+                    }
+
+    return nodes, edges, turns
+
+
+def main():
+    RESULTS.mkdir(parents=True, exist_ok=True)
+
+    world = ET.parse(WORLD_FILE).getroot().find("world")
+
+    boxes, unsupported = collect_collision_boxes(world)
+
+    if unsupported:
+        raise RuntimeError(
+            f"Unsupported collision geometries: {unsupported}"
+        )
+
+    occupied, protected = rasterize_boxes(boxes)
+
+    nodes, edges, turns = build_network(protected)
+
+    valid_edges = sum(
+        e["valid"] for e in edges.values()
+    )
+
+    valid_turns = sum(
+        t["valid"] for t in turns.values()
+    )
+
+    result = {
+        "world": "tugger_test",
+        "resolution": RESOLUTION,
+        "clearance_radius": round(CLEARANCE_RADIUS, 4),
+        "wheelbase": WHEELBASE,
+        "maximum_steering_rad": MAX_STEERING,
+        "minimum_turn_radius": MIN_TURN_RADIUS,
+        "selected_turn_radius": TURN_RADIUS,
+        "nodes": nodes,
+        "edges": edges,
+        "turns": turns,
+        "summary": {
+            "total_edges": len(edges),
+            "valid_edges": valid_edges,
+            "total_turns": len(turns),
+            "valid_turns": valid_turns,
+        },
+    }
+
+    output = RESULTS / "warehouse_route_network.json"
+
+    output.write_text(json.dumps(result, indent=2))
+
+    fig, ax = plt.subplots(figsize=(16, 10))
+
+    ax.imshow(
+        occupied,
+        origin="lower",
+        extent=[
+            WORLD_X_MIN,
+            WORLD_X_MAX,
+            WORLD_Y_MIN,
+            WORLD_Y_MAX,
+        ],
+        cmap="Greys",
+        alpha=0.65,
+    )
+
+    ax.imshow(
+        protected,
+        origin="lower",
+        extent=[
+            WORLD_X_MIN,
+            WORLD_X_MAX,
+            WORLD_Y_MIN,
+            WORLD_Y_MAX,
+        ],
+        cmap="Reds",
+        alpha=0.10,
+    )
+
+    for edge in edges.values():
+        points = np.array(edge["poses"])
+
+        ax.plot(
+            points[:, 0],
+            points[:, 1],
+            color="green" if edge["valid"] else "red",
+            linewidth=2.5,
+        )
+
+    for turn in turns.values():
+        points = np.array(turn["poses"])
+
+        ax.plot(
+            points[:, 0],
+            points[:, 1],
+            color="blue" if turn["valid"] else "orange",
+            linewidth=1.5,
+            alpha=0.8,
+        )
+
+    for node in nodes.values():
+        ax.scatter(
+            node["x"],
+            node["y"],
+            color="black",
+            s=15,
+        )
+
+    ax.set_xlim(WORLD_X_MIN, WORLD_X_MAX)
+    ax.set_ylim(WORLD_Y_MIN, WORLD_Y_MAX)
+
+    ax.set_aspect("equal")
+    ax.set_xlabel("X (m)")
+    ax.set_ylabel("Y (m)")
+
+    ax.set_title(
+        "Warehouse preplanned route network\n"
+        "Green: valid straight | Red: invalid straight | "
+        "Blue: valid turn | Orange: invalid turn"
+    )
+
+    ax.grid(alpha=0.15)
+
+    image = RESULTS / "warehouse_route_network.png"
+
+    fig.savefig(image, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+
+    print("========== ROUTE NETWORK ==========")
+    print("Nodes:", len(nodes))
+    print("Straight segments:", len(edges))
+    print("Valid straight segments:", valid_edges)
+    print("Turns:", len(turns))
+    print("Valid turns:", valid_turns)
+    print("Minimum 4WS turning radius:", round(
+        MIN_TURN_RADIUS, 3
+    ), "m")
+    print("Selected turning radius:", TURN_RADIUS, "m")
+    print("JSON:", output)
+    print("Image:", image)
+
+
+if __name__ == "__main__":
+    main()

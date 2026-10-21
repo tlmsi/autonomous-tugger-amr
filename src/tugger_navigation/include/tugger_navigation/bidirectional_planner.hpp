@@ -77,8 +77,6 @@ private:
   geometry_msgs::msg::PoseStamped locked_goal_;
   bool have_locked_goal_{false};
 
-  std::chrono::steady_clock::time_point last_plan_call_;
-  bool have_last_call_{false};
 };
 
 }  // namespace tugger_navigation

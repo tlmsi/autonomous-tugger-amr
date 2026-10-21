@@ -40,8 +40,6 @@ void BidirectionalPlanner::configure(
 
   locked_direction_ = Direction::NONE;
   have_locked_goal_ = false;
-  have_last_call_ = false;
-
   RCLCPP_INFO(
     node->get_logger(),
     "BidirectionalPlanner configured: FRONT-only and REVERSE-only candidates");
@@ -62,7 +60,6 @@ void BidirectionalPlanner::cleanup()
 
   locked_direction_ = Direction::NONE;
   have_locked_goal_ = false;
-  have_last_call_ = false;
 }
 
 void BidirectionalPlanner::activate()
@@ -88,7 +85,6 @@ void BidirectionalPlanner::deactivate()
 
   locked_direction_ = Direction::NONE;
   have_locked_goal_ = false;
-  have_last_call_ = false;
 }
 
 geometry_msgs::msg::PoseStamped
@@ -220,22 +216,10 @@ BidirectionalPlanner::createPlan(
       "BidirectionalPlanner: parent lifecycle node expired");
   }
 
-  const auto now = std::chrono::steady_clock::now();
-
   bool new_mission = !have_locked_goal_;
 
   if (have_locked_goal_ && !sameGoal(goal, locked_goal_)) {
     new_mission = true;
-  }
-
-  if (have_last_call_) {
-    const double gap =
-      std::chrono::duration<double>(
-        now - last_plan_call_).count();
-
-    if (gap > 2.5) {
-      new_mission = true;
-    }
   }
 
   if (new_mission) {
@@ -259,9 +243,6 @@ BidirectionalPlanner::createPlan(
         createForwardPlan(
           start, goal, viapoints, cancel_checker);
 
-      last_plan_call_ = std::chrono::steady_clock::now();
-      have_last_call_ = true;
-
       if (path.poses.empty()) {
         throw nav2_core::NoValidPathCouldBeFound(
           "Locked FRONT direction produced an empty path");
@@ -273,8 +254,6 @@ BidirectionalPlanner::createPlan(
 
       return path;
     } catch (...) {
-      last_plan_call_ = std::chrono::steady_clock::now();
-      have_last_call_ = true;
       throw;
     }
   }
@@ -284,9 +263,6 @@ BidirectionalPlanner::createPlan(
       auto path =
         createReversePlan(
           start, goal, viapoints, cancel_checker);
-
-      last_plan_call_ = std::chrono::steady_clock::now();
-      have_last_call_ = true;
 
       if (path.poses.empty()) {
         throw nav2_core::NoValidPathCouldBeFound(
@@ -299,8 +275,6 @@ BidirectionalPlanner::createPlan(
 
       return path;
     } catch (...) {
-      last_plan_call_ = std::chrono::steady_clock::now();
-      have_last_call_ = true;
       throw;
     }
   }
@@ -341,9 +315,6 @@ BidirectionalPlanner::createPlan(
       "REVERSE candidate failed: %s",
       e.what());
   }
-
-  last_plan_call_ = std::chrono::steady_clock::now();
-  have_last_call_ = true;
 
   if (!forward_valid && !reverse_valid) {
     throw nav2_core::NoValidPathCouldBeFound(
