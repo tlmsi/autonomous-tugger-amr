@@ -1,0 +1,63 @@
+ src/tugger_description/urdf/tugger.urdf.xacro.before_135_restore        |   829 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_attachment         |   828 [32m+++[m
+ .../urdf/tugger.urdf.xacro.before_camera_optimization                   |   827 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_cargo_joint_fix    |   866 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_compact_lift       |   828 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_full_lift_restore  |   829 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_lift               |   827 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_lift_collision_fix |   828 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_lift_diagnostic    |   829 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_lift_gravity_test  |   824 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_lift_limit_test    |   824 [32m+++[m
+ src/tugger_description/urdf/tugger.urdf.xacro.before_velocity_test      |   829 [32m+++[m
+ src/tugger_gazebo/config/controllers.yaml.before_full_lift_restore      |    40 [32m+[m
+ src/tugger_gazebo/config/controllers.yaml.before_lift                   |    30 [32m+[m
+ src/tugger_gazebo/config/controllers.yaml.before_velocity_test          |    40 [32m+[m
+ src/tugger_gazebo/launch/simulation.launch.py.before_full_lift_restore  |   221 [32m+[m
+ src/tugger_gazebo/launch/simulation.launch.py.before_lift               |   204 [32m+[m
+ src/tugger_gazebo/launch/simulation.launch.py.before_lift_isolation     |   222 [32m+[m
+ src/tugger_gazebo/worlds/tugger_warehouse.before_cargo_stations.sdf     |  1454 [32m+++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.before_dynamic_cargo.sdf      |  1646 [32m+++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.before_simplification.sdf     | 10094 [32m+++++++++++++++++++++++++++++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf                           |  1746 [32m++++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf.before_attachment         |  1668 [32m+++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf.before_compact_lift       |  1668 [32m+++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf.before_corridor_centering |  1712 [32m++++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf.before_dropoff_marker     |  1712 [32m++++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf.before_height_adjustment  |  1712 [32m++++++[m
+ src/tugger_gazebo/worlds/tugger_warehouse.sdf.before_movable_stands     |  1668 [32m+++++[m
+ .../worlds/tugger_warehouse.sdf.before_two_dropoff_targets              |  1730 [32m++++++[m
+ src/tugger_navigation/config/nav2.yaml                                  |     7 [32m+[m[31m-[m
+ .../include/tugger_navigation/bidirectional_planner.hpp                 |     2 [31m-[m
+ src/tugger_navigation/src/bidirectional_planner.cpp                     |    29 [31m-[m
+ tools/cargo_transport/compact_lift_and_stands.py                        |   127 [32m+[m
+ tools/cargo_transport/configure_cargo_attachment.py                     |    82 [32m+[m
+ tools/cargo_transport/drive_distance.py                                 |   177 [32m+[m
+ tools/cargo_transport/prepare_dynamic_cargo.py                          |    91 [32m+[m
+ tools/warehouse_navigation/check_warehouse_alignment.py                 |   122 [32m+[m
+ tools/warehouse_navigation/follow_warehouse_route.py                    |   357 [32m++[m
+ tools/warehouse_navigation/follow_warehouse_route.py.before_alignment   |   315 [32m+[m
+ tools/warehouse_navigation/follow_warehouse_route.py.before_tf_fix      |   288 [32m+[m
+ tools/warehouse_navigation/live_graph_mission.py                        |   221 [32m+[m
+ tools/warehouse_navigation/live_graph_mission.py.before_alignment       |   204 [32m+[m
+ tools/warehouse_navigation/prepare_graph_mission.py                     |   120 [32m+[m
+ tools/warehouse_navigation/warehouse_alignment.py                       |    46 [32m+[m
+ tools/warehouse_validation/generate_route_network.py                    |   604 [32m++[m
+ tools/warehouse_validation/generate_route_network.py.bak2               |   472 [32m++[m
+ tools/warehouse_validation/generate_route_network.py.before_quintic     |   531 [32m++[m
+ tools/warehouse_validation/results/route_curved_origin.json             |   866 [32m+++[m
+ tools/warehouse_validation/results/route_curved_test.json               |   866 [32m+++[m
+ tools/warehouse_validation/results/route_forward.json                   |  8802 [32m+++++++++++++++++++++++++++[m
+ tools/warehouse_validation/results/route_forward.png                    |   Bin [31m0[m -> [32m76069[m bytes
+ tools/warehouse_validation/results/route_graph_mission.json             |  4706 [32m++++++++++++++[m
+ tools/warehouse_validation/results/route_initial_test.json              |   596 [32m++[m
+ tools/warehouse_validation/results/route_live_mission.json              |  2211 [32m+++++++[m
+ tools/warehouse_validation/results/route_reverse.json                   |  8802 [32m+++++++++++++++++++++++++++[m
+ tools/warehouse_validation/results/route_reverse.png                    |   Bin [31m0[m -> [32m76090[m bytes
+ tools/warehouse_validation/results/route_tight_turn_test.json           |   696 [32m+++[m
+ tools/warehouse_validation/results/warehouse_clearance.png              |   Bin [31m0[m -> [32m168952[m bytes
+ tools/warehouse_validation/results/warehouse_report.json                |    54 [32m+[m
+ tools/warehouse_validation/results/warehouse_route_network.json         |  8802 [32m+++++++++++++++++++++++++++[m
+ tools/warehouse_validation/results/warehouse_route_network.png          |   Bin [31m0[m -> [32m76090[m bytes
+ tools/warehouse_validation/validate_warehouse.py                        |   549 [32m++[m
+ 62 files changed, 78247 insertions(+), 33 deletions(-)

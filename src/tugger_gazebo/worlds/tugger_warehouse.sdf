@@ -1404,7 +1404,7 @@
     </model>
     <model name="cargo_station_0_box">
       <static>false</static>
-      <pose>-17.5 -7.0 0.43 0 0 0</pose>
+      <pose>-17.5 -7.0 0.56 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
@@ -1439,7 +1439,7 @@
     </model>
     <model name="cargo_station_3_box">
       <static>false</static>
-      <pose>17.5 7.0 0.43 0 0 0</pose>
+      <pose>17.5 7.0 0.56 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
@@ -1477,7 +1477,7 @@
       <pose>-17.5 -7.0 0 0 0 0</pose>
       <link name="stand_link">
         <collision name="tabletop_collision">
-          <pose>0 0 0.16499999999999998 0 0 0</pose>
+          <pose>0 0 0.295 0 0 0</pose>
           <geometry>
             <box>
               <size>1.3 1.1 0.03</size>
@@ -1485,7 +1485,7 @@
           </geometry>
         </collision>
         <visual name="tabletop_visual">
-          <pose>0 0 0.16499999999999998 0 0 0</pose>
+          <pose>0 0 0.295 0 0 0</pose>
           <geometry>
             <box>
               <size>1.3 1.1 0.03</size>
@@ -1497,18 +1497,18 @@
           </material>
         </visual>
         <collision name="leg_0_0_collision">
-          <pose>-0.56 -0.46 0.075 0 0 0</pose>
+          <pose>-0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_0_0_visual">
-          <pose>-0.56 -0.46 0.075 0 0 0</pose>
+          <pose>-0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1517,18 +1517,18 @@
           </material>
         </visual>
         <collision name="leg_0_1_collision">
-          <pose>-0.56 0.46 0.075 0 0 0</pose>
+          <pose>-0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_0_1_visual">
-          <pose>-0.56 0.46 0.075 0 0 0</pose>
+          <pose>-0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1537,18 +1537,18 @@
           </material>
         </visual>
         <collision name="leg_1_0_collision">
-          <pose>0.56 -0.46 0.075 0 0 0</pose>
+          <pose>0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_1_0_visual">
-          <pose>0.56 -0.46 0.075 0 0 0</pose>
+          <pose>0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1557,18 +1557,18 @@
           </material>
         </visual>
         <collision name="leg_1_1_collision">
-          <pose>0.56 0.46 0.075 0 0 0</pose>
+          <pose>0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_1_1_visual">
-          <pose>0.56 0.46 0.075 0 0 0</pose>
+          <pose>0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1595,7 +1595,7 @@
       <pose>17.5 7.0 0 0 0 0</pose>
       <link name="stand_link">
         <collision name="tabletop_collision">
-          <pose>0 0 0.16499999999999998 0 0 0</pose>
+          <pose>0 0 0.295 0 0 0</pose>
           <geometry>
             <box>
               <size>1.3 1.1 0.03</size>
@@ -1603,7 +1603,7 @@
           </geometry>
         </collision>
         <visual name="tabletop_visual">
-          <pose>0 0 0.16499999999999998 0 0 0</pose>
+          <pose>0 0 0.295 0 0 0</pose>
           <geometry>
             <box>
               <size>1.3 1.1 0.03</size>
@@ -1615,18 +1615,18 @@
           </material>
         </visual>
         <collision name="leg_0_0_collision">
-          <pose>-0.56 -0.46 0.075 0 0 0</pose>
+          <pose>-0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_0_0_visual">
-          <pose>-0.56 -0.46 0.075 0 0 0</pose>
+          <pose>-0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1635,18 +1635,18 @@
           </material>
         </visual>
         <collision name="leg_0_1_collision">
-          <pose>-0.56 0.46 0.075 0 0 0</pose>
+          <pose>-0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_0_1_visual">
-          <pose>-0.56 0.46 0.075 0 0 0</pose>
+          <pose>-0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1655,18 +1655,18 @@
           </material>
         </visual>
         <collision name="leg_1_0_collision">
-          <pose>0.56 -0.46 0.075 0 0 0</pose>
+          <pose>0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_1_0_visual">
-          <pose>0.56 -0.46 0.075 0 0 0</pose>
+          <pose>0.56 -0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
@@ -1675,18 +1675,18 @@
           </material>
         </visual>
         <collision name="leg_1_1_collision">
-          <pose>0.56 0.46 0.075 0 0 0</pose>
+          <pose>0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
         </collision>
         <visual name="leg_1_1_visual">
-          <pose>0.56 0.46 0.075 0 0 0</pose>
+          <pose>0.56 0.46 0.14 0 0 0</pose>
           <geometry>
             <box>
-              <size>0.08 0.08 0.15</size>
+              <size>0.08 0.08 0.28</size>
             </box>
           </geometry>
           <material>
