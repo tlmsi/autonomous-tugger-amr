@@ -305,15 +305,43 @@ class Mission(Node):
         if not self.args.confirm_cargo:
             self.get_logger().warning('STOP: cargo pickup not verified. Do not navigate loaded.')
             return
-        # Back out along the entry line before asking Nav2 to plan a loaded route.
-        self.drive(-self.args.dock_distance)
-        # Dropoff marker has no raised stand: unloading needs separately validated mechanism.
+        # Retreat independently of the forward docking distance.
+        self.get_logger().info(
+            f'RETREAT: reversing {self.args.retreat_distance:.2f} m'
+        )
+        self.drive(-self.args.retreat_distance)
+
+        # Nav2 plans from the robot's NEW position after retreat.
         dx,dy=drop
-        self.navigate(dx+self.args.dropoff_offset,dy,math.pi,'LOADED DELIVERY APPROACH')
-        if not self.args.enable_unload:
-            self.get_logger().warning('STOP at delivery approach: unloading not calibrated')
+
+        if self.args.auto_mission:
+            self.get_logger().info(
+                'AUTONOMOUS DELIVERY: planning from current position to NW'
+            )
+            self.navigate(dx,dy,math.pi,'AUTONOMOUS FINAL DROPOFF')
+            self.stop()
+            self.get_logger().info('Destination reached; lowering lift')
+            self.lift(0.0)
+            self.get_logger().warning(
+                'Mission commands completed; visually verify cargo release'
+            )
             return
-        raise RuntimeError('Unloading intentionally blocked: destination is a floor marker, not a support stand; validate physical release before enabling')
+
+        self.navigate(
+            dx+self.args.dropoff_offset,
+            dy,
+            math.pi,
+            'LOADED DELIVERY APPROACH'
+        )
+        if not self.args.enable_unload:
+            self.get_logger().warning(
+                'STOP at delivery approach: unloading not calibrated'
+            )
+            return
+        raise RuntimeError(
+            'Manual unloading remains blocked; use --auto-mission '
+            'only after validating the delivery geometry'
+        )
 
 
 def main():
@@ -327,6 +355,12 @@ def main():
     p.add_argument('--nav-timeout',type=float,default=900)
     p.add_argument('--approach-offset',type=float,default=1.8)
     p.add_argument('--dock-distance',type=float,default=1.8)
+    p.add_argument('--retreat-distance',type=float,default=1.0)
+    p.add_argument(
+        '--auto-mission',
+        action='store_true',
+        help='Automate SW pickup, 1 m retreat, NW delivery and unloading'
+    )
     p.add_argument('--dropoff-offset',type=float,default=1.8)
     p.add_argument('--dock-position-tolerance',type=float,default=0.08)
     p.add_argument('--dock-yaw-tolerance',type=float,default=5.0)
@@ -338,8 +372,20 @@ def main():
     args=p.parse_args()
     if args.enable_unload and not args.confirm_cargo:
         p.error('--enable-unload requires --confirm-cargo')
-    if args.dock_distance<=0 or args.approach_offset<=0:
+    if (
+        args.dock_distance <= 0
+        or args.approach_offset <= 0
+        or args.retreat_distance <= 0
+    ):
         p.error('Distances must be positive')
+    if args.auto_mission:
+        if args.pickup != 'sw' or args.dropoff != 'nw':
+            p.error('--auto-mission currently supports SW to NW only')
+        if not args.enable_docking or not args.confirm_cargo:
+            p.error(
+                '--auto-mission requires --enable-docking '
+                'and --confirm-cargo'
+            )
     rclpy.init()
     node=Mission(args)
     try:

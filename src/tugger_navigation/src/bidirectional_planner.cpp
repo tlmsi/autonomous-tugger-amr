@@ -64,6 +64,8 @@ void BidirectionalPlanner::cleanup()
 
 void BidirectionalPlanner::activate()
 {
+  locked_direction_ = Direction::NONE;
+  have_locked_goal_ = false;
   if (forward_planner_) {
     forward_planner_->activate();
   }
@@ -135,6 +137,38 @@ double BidirectionalPlanner::pathLength(
   }
 
   return length;
+}
+
+
+double BidirectionalPlanner::pathScore(
+  const nav_msgs::msg::Path & path) const
+{
+  if (path.poses.size() < 2) {
+    return std::numeric_limits<double>::infinity();
+  }
+
+  double turning = 0.0;
+
+  for (std::size_t i = 1; i < path.poses.size(); ++i) {
+    const auto & a = path.poses[i - 1].pose.orientation;
+    const auto & b = path.poses[i].pose.orientation;
+
+    const double yaw_a = std::atan2(
+      2.0 * (a.w * a.z + a.x * a.y),
+      1.0 - 2.0 * (a.y * a.y + a.z * a.z));
+
+    const double yaw_b = std::atan2(
+      2.0 * (b.w * b.z + b.x * b.y),
+      1.0 - 2.0 * (b.y * b.y + b.z * b.z));
+
+    const double delta = std::atan2(
+      std::sin(yaw_b - yaw_a),
+      std::cos(yaw_b - yaw_a));
+
+    turning += std::abs(delta);
+  }
+
+  return pathLength(path) + 0.75 * turning;
 }
 
 bool BidirectionalPlanner::sameGoal(
@@ -323,12 +357,12 @@ BidirectionalPlanner::createPlan(
 
   const double forward_length =
     forward_valid ?
-    pathLength(forward_path) :
+    pathScore(forward_path) :
     std::numeric_limits<double>::infinity();
 
   const double reverse_length =
     reverse_valid ?
-    pathLength(reverse_path) :
+    pathScore(reverse_path) :
     std::numeric_limits<double>::infinity();
 
   if (forward_valid &&
@@ -338,7 +372,7 @@ BidirectionalPlanner::createPlan(
 
     RCLCPP_INFO(
       node->get_logger(),
-      "Mission direction LOCKED: FRONT | front=%.3f m reverse=%.3f m",
+      "Mission direction LOCKED: FRONT | front_score=%.3f reverse_score=%.3f",
       forward_length,
       reverse_length);
 
@@ -349,7 +383,7 @@ BidirectionalPlanner::createPlan(
 
   RCLCPP_INFO(
     node->get_logger(),
-    "Mission direction LOCKED: REVERSE | front=%.3f m reverse=%.3f m",
+    "Mission direction LOCKED: REVERSE | front_score=%.3f reverse_score=%.3f",
     forward_length,
     reverse_length);
 

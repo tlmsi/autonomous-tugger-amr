@@ -30,13 +30,13 @@ planner_server:
         retrospective_penalty: 0.015
 
       Reverse:
+
         tolerance: 0.25
         downsample_costmap: false
         allow_unknown: true
         max_iterations: 1000000
         max_on_approach_iterations: 1000
-        max_planning_time: 15.0
-
+        max_planning_time: 25.0
         motion_model_for_search: "DUBIN"
         angle_quantization_bins: 72
         analytic_expansion_ratio: 3.5
@@ -76,16 +76,16 @@ controller_server:
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
       stateful: true
-      xy_goal_tolerance: 0.15
-      yaw_goal_tolerance: 0.20
+      xy_goal_tolerance: 0.07
+      yaw_goal_tolerance: 0.07
 
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
 
       max_linear_vel: 0.20
-      lookahead_dist: 0.45
-      min_lookahead_dist: 0.25
-      max_lookahead_dist: 0.70
+      lookahead_dist: 0.65
+      min_lookahead_dist: 0.40
+      max_lookahead_dist: 0.90
       lookahead_time: 1.5
 
       rotate_to_heading_angular_vel: 0.0

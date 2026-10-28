@@ -49,6 +49,7 @@ private:
     const nav_msgs::msg::Path & path) const;
 
   double pathLength(const nav_msgs::msg::Path & path) const;
+  double pathScore(const nav_msgs::msg::Path & path) const;
 
   bool sameGoal(
     const geometry_msgs::msg::PoseStamped & a,
