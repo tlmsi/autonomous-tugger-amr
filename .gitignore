@@ -60,3 +60,7 @@ plots/
 /logs/
 /odom.
 tools/v1_manhattan_bezier/phase14/routes_refined/phase14f_*.json
+
+# Generated navigation diagnostics
+/tools/v1_manhattan_bezier/diagnostics/
+/tools/v1_manhattan_bezier/docking/docking_report.json
