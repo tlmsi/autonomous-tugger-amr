@@ -226,14 +226,6 @@ class FourWSOdometry(Node):
 
         self.odom_pub.publish(odom)
 
-        tf_msg = TransformStamped()
-        tf_msg.header = odom.header
-        tf_msg.child_frame_id = odom.child_frame_id
-        tf_msg.transform.translation.x = odom.pose.pose.position.x
-        tf_msg.transform.translation.y = odom.pose.pose.position.y
-        tf_msg.transform.translation.z = odom.pose.pose.position.z
-        tf_msg.transform.rotation = odom.pose.pose.orientation
-        self._tf_broadcaster.sendTransform(tf_msg)
 
 
 def main(args=None):

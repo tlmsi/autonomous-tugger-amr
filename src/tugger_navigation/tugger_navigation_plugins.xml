@@ -8,3 +8,14 @@
     </description>
   </class>
 </library>
+
+<library path="tugger_rrt_star_planner">
+  <class
+    type="tugger_navigation::RRTStarReedsSheppPlanner"
+    base_class_type="nav2_core::GlobalPlanner">
+    <description>
+      Custom RRT* global planner using Reeds-Shepp steering,
+      direction-aware rewiring, and cardinal-heading preferences.
+    </description>
+  </class>
+</library>

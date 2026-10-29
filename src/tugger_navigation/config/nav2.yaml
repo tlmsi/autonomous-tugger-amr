@@ -6,7 +6,7 @@ planner_server:
     planner_plugins: ["GridBased"]
 
     GridBased:
-      plugin: "tugger_navigation::BidirectionalPlanner"
+      plugin: "tugger_navigation::RRTStarReedsSheppPlanner"
 
       Forward:
         tolerance: 0.25

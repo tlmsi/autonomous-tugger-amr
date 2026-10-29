@@ -173,3 +173,104 @@ These commands are state-dependent. Docking, retreat, and unloading must not be 
 ## License
 
 Refer to the package-level license files where available.
+
+<!-- PHASE14_MILESTONE_START -->
+## Project Status — Phase 14: Two-Stage Precision Docking
+
+The Autonomous Tugger V2 project is a ROS 2 and Gazebo simulation
+of an autonomous four-wheel-steering warehouse tugger.
+
+### Development Environment
+
+- Ubuntu 26.04
+- ROS 2 Lyrical
+- Gazebo Sim 10
+- Four-wheel-steering (4WS) mobile robot
+- Warehouse navigation and simulated cargo stations
+
+### Navigation and Docking
+
+The current navigation system includes:
+
+- Warehouse map and station configurations.
+- Manhattan–Bézier route generation and saved route execution.
+- Forward and reverse warehouse route candidates.
+- Predocking route generation for four cargo stations.
+- Two-stage docking with a mandatory stationary handoff.
+- Low-speed precision entry with continuous heading and lateral correction.
+- Odometry, TF, steering, and final-pose checks.
+
+**Segment 1:** Navigate from HOME to a predocking location and stop.
+
+**Segment 2:** Enter the cargo station while correcting position and
+heading, then verify the final stationary pose.
+
+The successfully tested southeast drop-off target is:
+
+| Parameter | Target |
+| --- | --- |
+| X | 17.500 m |
+| Y | -7.000 m |
+| Heading | -90 degrees |
+| Position tolerance | 0.02 m |
+| Heading tolerance | 2 degrees |
+
+### Phase 14 Gazebo Validation
+
+The first supervised Gazebo precision-entry test completed successfully.
+
+| Measurement | Observed result |
+| --- | --- |
+| Final X | Approximately 17.496 m |
+| Final Y | Approximately -6.981 m |
+| Final heading | Approximately -89.54 degrees |
+| Final position error | Approximately 1.94 cm |
+| Final heading error | Approximately 0.46 degrees |
+| Final linear speed | 0.000 m/s |
+| Final steering angle | Approximately 0 degrees |
+
+The precision-entry controller reported successful stationary-pose
+verification.
+
+Offline tests also completed 125/125 dynamic controller cases and
+125/125 modeled clearance cases with the selected correction gains.
+
+These results demonstrate a working Gazebo navigation and docking
+milestone, **not full collision-safety certification**.
+
+### Current Controller Configuration
+
+The Phase 14 docking controller uses:
+
+- Heading correction gain: 4.0
+- Lateral correction gain: 6.0
+- Maximum commanded precision-entry speed: 0.08 m/s
+- Final stationary-pose verification before reporting success
+
+Temporary FAST_SIM settings are used for development. Normal-speed
+operation will require separate validation.
+
+### Safety and Current Limitations
+
+- Cargo lifting remains disabled.
+- Full articulated-wheel and robot 3D collision safety is not certified.
+- The validated physical-motion run applies to the southeast drop-off.
+- Other cargo stations still require supervised execution validation.
+- Docking tolerances must be rechecked when speed settings change.
+
+### Key Phase 14 Files
+
+- `tools/v1_manhattan_bezier/phase14/phase14_nav_to_predock.py`
+- `tools/v1_manhattan_bezier/phase14/phase14_precision_entry.py`
+- `tools/v1_manhattan_bezier/phase14/check_predock.py`
+- `tools/v1_manhattan_bezier/phase14/refine_docking_routes.py`
+- `tools/v1_manhattan_bezier/phase14/routes_refined/`
+
+### Development Status
+
+**Phase 14 navigation and Gazebo precision docking: complete for the
+tested southeast drop-off scenario.**
+
+Next work will address cargo-handling safety and further autonomous
+mission integration.
+<!-- PHASE14_MILESTONE_END -->
